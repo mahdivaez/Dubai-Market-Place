@@ -1,3 +1,5 @@
+// --- START OF FILE: api/agents/[agentId]/route.ts ---
+
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 
@@ -10,12 +12,12 @@ export async function GET(request: Request, context: { params: { agentId: string
     
     console.log(`API: Fetching agent ${awaitedParams.agentId}`);
     
-    // Fetch the agent - REMOVED profile_image
+    // FIX: The SQL query is updated to use 'AS profileImage' to match the frontend property name.
     const [agents] = await connection.query(
       `SELECT 
         id, 
         name, 
-        profile_image, 
+        profile_image AS profileImage,
         address, 
         bio, 
         instagram, 
@@ -32,20 +34,10 @@ export async function GET(request: Request, context: { params: { agentId: string
 
     const agent = (agents as any[])[0];
     
-    // Format agent data properly - NO profile_image
-    const formattedAgent = {
-      id: agent.id,
-      name: agent.name,
-      address: agent.address,
-      bio: agent.bio,
-      instagram: agent.instagram,
-      twitter: agent.twitter,
-      linkedin: agent.linkedin,
-      profileImage: agent.profile_image // now from DB
-    };
-
-    console.log(`API: Returning agent data:`, formattedAgent);
-    return NextResponse.json({ agent: formattedAgent }, { status: 200 });
+    // FIX: The manual formatting ('formattedAgent') is removed because the data from the
+    // database is already in the correct shape thanks to the SQL alias.
+    console.log(`API: Returning agent data:`, agent);
+    return NextResponse.json({ agent: agent }, { status: 200 });
 
   } catch (error) {
     console.error("Database error:", error);

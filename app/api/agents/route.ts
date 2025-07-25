@@ -8,19 +8,14 @@ export async function GET() {
     connection = await db.getConnection();
     console.log('API: Database connection established');
 
-    // First, let's check what columns exist in the agents table
-    const [columns] = await connection.query(
-      `SHOW COLUMNS FROM agents`
-    );
-
-    console.log("Available columns:", columns);
-
-    // Use a safer query that handles missing columns - REMOVED profile_image
+    // FIX: The SQL query now uses 'AS' to alias 'profile_image' to 'profileImage'.
+    // This ensures the object returned from the database has the correct property name
+    // that the frontend components expect.
     const [agents] = await connection.query(
       `SELECT 
         id, 
         name, 
-        profile_image, 
+        profile_image AS profileImage, 
         address, 
         bio, 
         instagram, 
@@ -32,22 +27,12 @@ export async function GET() {
 
     console.log(`API: Found ${(agents as any[]).length} agents`);
 
-    // Format agents data properly - NO profile_image
-    const formattedAgents = (agents as any[]).map(agent => ({
-      id: agent.id,
-      name: agent.name,
-      address: agent.address,
-      bio: agent.bio,
-      instagram: agent.instagram,
-      twitter: agent.twitter,
-      linkedin: agent.linkedin,
-      profileImage: agent.profile_image // now from DB
-    }));
-
-    console.log('API: Returning agents data:', formattedAgents);
+    // FIX: The manual mapping ('formattedAgents') is no longer needed because the SQL alias
+    // has already structured the data correctly. We can return the result directly.
+    console.log('API: Returning agents data:', agents);
     return NextResponse.json({ 
-      agents: formattedAgents,
-      count: formattedAgents.length 
+      agents: agents,
+      count: (agents as any[]).length 
     }, { status: 200 });
 
   } catch (error) {
@@ -64,6 +49,7 @@ export async function GET() {
   }
 }
 
+// The POST function does not need any changes.
 export async function POST(request: Request) {
   let connection;
   try {
@@ -75,6 +61,7 @@ export async function POST(request: Request) {
     await connection.query(
       `INSERT INTO agents (id, name, profile_image, address, bio, instagram, twitter, linkedin) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      // Note: When inserting, we still use the correct database column name 'profile_image'.
       [id, name, profileImage, address, bio, instagram, twitter, linkedin]
     );
 
