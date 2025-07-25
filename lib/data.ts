@@ -37,21 +37,24 @@ function getBaseUrl() {
 
   return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 }
-export async function getAgentById(agentId: string): Promise<Agent | null> {
+export async function getAgentById(agentId: string) {
   try {
-    const baseUrl = getBaseUrl();
-    const url = `${baseUrl}/api/agents/${agentId}`;
-    console.log('Fetching agent from:', url);
-    const response = await fetch(url, { cache: 'no-store', headers: { 'Content-Type': 'application/json' } });
+    const apiBaseUrl = process.env.API_BASE_URL || "https://dubai-market-place.vercel.app";
+    const response = await fetch(`${apiBaseUrl}/api/agents/${agentId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.MY_API_KEY || "",
+      },
+      next: { revalidate: 3600 },
+    });
     if (!response.ok) {
-      console.error(`Failed to fetch agent: ${response.status} ${response.statusText}. URL: ${url}`);
-      return null;
+      throw new Error(`Failed to fetch agent: ${response.status}`);
     }
     const data = await response.json();
-    console.log('Agent data received:', data);
-    return data.agent;
+    return data.agent || null;
   } catch (error) {
-    console.error("Error fetching agent:", error);
+    console.error("getAgentById: Error:", error);
     return null;
   }
 }
@@ -89,17 +92,17 @@ export async function getAgentPosts(agentId: string): Promise<Post[]> {
 // @/lib/data.ts
 export async function getAllAgents() {
   try {
-    console.log("getAllAgents: Fetching agents...");
-    const response = await fetch(`${process.env.API_BASE_URL}/api/agents`, {
+    const apiBaseUrl = process.env.API_BASE_URL || "https://dubai-market-place.vercel.app";
+    console.log("getAllAgents: Fetching agents from:", `${apiBaseUrl}/api/agents`);
+    const response = await fetch(`${apiBaseUrl}/api/agents`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": process.env.API_KEY || "",
+        "x-api-key": process.env.MY_API_KEY || "",
       },
-      // Remove cache: "no-store" for static generation
-      next: { revalidate: 3600 }, // Revalidate every hour
+      next: { revalidate: 3600 }, // Cache for 1 hour
     });
-    console.log("getAllAgents: Response status:", response.status);
+    console.log("getAllAgents: Response status:", response.status, response.statusText);
     if (!response.ok) {
       throw new Error(`Failed to fetch agents: ${response.status} ${response.statusText}`);
     }

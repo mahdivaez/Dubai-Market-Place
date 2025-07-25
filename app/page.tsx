@@ -4,9 +4,12 @@ import ClientOnly from "@/components/ClientOnly"
 import ImageWithFallback from "@/components/ImageWithFallback"
 import { getImagePath, getInitials } from "@/lib/utils/imageUtils"
 
+
+export const dynamic = "force-dynamic";
 export default async function HomePage() {
   let agents: any[] = [];
   let error = null;
+  
 
   try {
     console.log('Homepage: Starting to fetch agents...');

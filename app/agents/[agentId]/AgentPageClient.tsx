@@ -46,44 +46,43 @@ export default function AgentPageClient({ agent }: AgentPageClientProps) {
   const [error, setError] = useState<string | null>(null)
   const [hasFetched, setHasFetched] = useState(false)
 
-  const fetchPosts = useCallback(async () => {
-    if (!agent?.id || hasFetched) {
-      console.log("AgentPageClient: Skipping fetch - no agent ID or already fetched", { agentId: agent?.id, hasFetched });
-      return;
+// AgentPageClient.tsx
+const fetchPosts = useCallback(async () => {
+  if (!agent?.id || hasFetched) {
+    console.log("AgentPageClient: Skipping fetch - no agent ID or already fetched", { agentId: agent?.id, hasFetched });
+    return;
+  }
+
+  try {
+    setLoading(true);
+    setError(null);
+    console.log("AgentPageClient: Fetching posts for agent:", agent.id);
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "https://dubai-market-place.vercel.app";
+    const response = await fetch(`${apiBaseUrl}/api/agents/${agent.id}/posts`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.NEXT_PUBLIC_API_KEY || "",
+      },
+      cache: "no-store",
+    });
+    console.log("AgentPageClient: Posts API response status:", response.status, response.statusText);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error("AgentPageClient: Posts API error:", errorData);
+      throw new Error(`Failed to fetch posts: ${response.status} - ${errorData.details || response.statusText || "Unknown error"}`);
     }
-  
-    try {
-      setLoading(true);
-      setError(null);
-      console.log("AgentPageClient: Fetching posts for agent:", agent.id);
-  
-      const response = await fetch(`/api/agents/${agent.id}/posts`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": process.env.NEXT_PUBLIC_API_KEY || "", // Add API key
-        },
-        cache: "no-store",
-      });
-  
-      console.log("AgentPageClient: Posts API response status:", response.status, response.statusText);
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error("AgentPageClient: Posts API error:", errorData);
-        throw new Error(`Failed to fetch posts: ${response.status} - ${errorData.details || response.statusText || "Unknown error"}`);
-      }
-  
-      const data = await response.json();
-      console.log("AgentPageClient: Posts set:", data.posts);
-      setPosts(data.posts || []);
-      setHasFetched(true);
-    } catch (error) {
-      console.error("AgentPageClient: Error fetching posts:", error);
-      setError(error instanceof Error ? error.message : "خطا در بارگذاری پست‌ها");
-    } finally {
-      setLoading(false);
-    }
-  }, [agent?.id, hasFetched]);
+    const data = await response.json();
+    console.log("AgentPageClient: Posts set:", data.posts);
+    setPosts(data.posts || []);
+    setHasFetched(true);
+  } catch (error) {
+    console.error("AgentPageClient: Error fetching posts:", error);
+    setError(error instanceof Error ? error.message : "خطا در بارگذاری پست‌ها");
+  } finally {
+    setLoading(false);
+  }
+}, [agent?.id, hasFetched]);
 
   useEffect(() => {
     console.log("AgentPageClient: useEffect triggered", { agentId: agent?.id, hasFetched })
