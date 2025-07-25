@@ -6,8 +6,8 @@ interface Agent {
   name: string;
   address: string;
   bio: string;
-  phone: string;
-  email: string;
+  phone?: string; // Made optional
+  email?: string; // Made optional
   instagram?: string;
   twitter?: string;
   linkedin?: string;
@@ -19,10 +19,9 @@ interface AgentPageProps {
 }
 
 export default async function AgentPage({ params }: AgentPageProps) {
-  const awaitedParams = await params;
-  console.log('AgentPage: Fetching agent with ID:', awaitedParams.agentId);
+  console.log('AgentPage: Fetching agent with ID:', params.agentId);
   
-  const agent: Agent | null = await getAgentById(awaitedParams.agentId);
+  const agent: Agent | null = await getAgentById(params.agentId);
   console.log('AgentPage: Agent data received:', agent);
 
   if (!agent) {
@@ -32,7 +31,7 @@ export default async function AgentPage({ params }: AgentPageProps) {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900">Agent Not Found</h1>
           <p className="text-gray-600">
-            The agent with ID "{awaitedParams.agentId}" does not exist.
+            The agent with ID "{params.agentId}" does not exist.
           </p>
           <a
             href="/"

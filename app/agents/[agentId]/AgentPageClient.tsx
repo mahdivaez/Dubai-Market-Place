@@ -12,8 +12,8 @@ interface Agent {
   name: string
   address: string
   bio: string
-  phone: string
-  email: string
+  phone?: string // Made optional
+  email?: string // Made optional
   instagram?: string
   twitter?: string
   linkedin?: string
@@ -76,6 +76,7 @@ export default function AgentPageClient({ agent }: AgentPageClientProps) {
       const data = await response.json()
       console.log("AgentPageClient: Posts data received:", data)
       setPosts(data.posts || [])
+      console.log("AgentPageClient: Posts set:", data.posts)
       setHasFetched(true)
     } catch (error) {
       console.error("AgentPageClient: Error fetching posts:", error)
@@ -108,7 +109,6 @@ export default function AgentPageClient({ agent }: AgentPageClientProps) {
       </div>
     )
   }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-amber-50/30" dir="rtl">
       {/* Premium Header */}

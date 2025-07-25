@@ -10,12 +10,11 @@ interface PostPageProps {
 }
 
 export default async function PostPage({ params }: PostPageProps) {
-  const awaitedParams = await params;
-  console.log('PostPage: Fetching data for agent:', awaitedParams.agentId, 'post:', awaitedParams.postId);
+  console.log('PostPage: Fetching data for agent:', params.agentId, 'post:', params.postId);
   
   const [agent, post] = await Promise.all([
-    getAgentById(awaitedParams.agentId),
-    getPost(awaitedParams.postId)
+    getAgentById(params.agentId),
+    getPost(params.postId)
   ])
 
   console.log('PostPage: Agent data:', agent);
@@ -26,7 +25,6 @@ export default async function PostPage({ params }: PostPageProps) {
     notFound()
   }
 
-  // Verify the post belongs to the agent
   if (post.agentId !== agent.id) {
     console.log('PostPage: Post does not belong to agent');
     notFound()

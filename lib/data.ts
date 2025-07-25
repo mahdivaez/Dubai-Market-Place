@@ -50,27 +50,14 @@ export async function getAgentById(agentId: string): Promise<Agent | null> {
   try {
     const baseUrl = getBaseUrl();
     const url = `${baseUrl}/api/agents/${agentId}`;
-
     console.log('Fetching agent from:', url);
-
-    const response = await fetch(url, {
-      cache: 'no-store',
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
-
+    const response = await fetch(url, { cache: 'no-store', headers: { 'Content-Type': 'application/json' } });
     if (!response.ok) {
-      console.error(`Failed to fetch agent: ${response.status} ${response.statusText}. URL: ${url}`); // Added URL to log
+      console.error(`Failed to fetch agent: ${response.status} ${response.statusText}. URL: ${url}`);
       return null;
     }
-
     const data = await response.json();
     console.log('Agent data received:', data);
-    // FIX/CHECK: 'data.agent' vs 'data'. This depends *entirely* on what your actual API route returns.
-    // If your API route for `api/agents/[agentId].ts` does `res.status(200).json({ agent: agentData });`, then `data.agent` is correct.
-    // If it does `res.status(200).json(agentData);`, then `return data;` is correct.
-    // Verify your API implementation.
     return data.agent;
   } catch (error) {
     console.error("Error fetching agent:", error);
