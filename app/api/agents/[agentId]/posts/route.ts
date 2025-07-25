@@ -1,12 +1,34 @@
-import { db } from "@/lib/db";
-import { NextResponse } from "next/server";
+import { db, testConnection, initializeDatabase } from "@/lib/db";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(request: Request, context: { params: { agentId: string } }) {
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+export async function GET(
+  request: NextRequest, 
+  context: { params: Promise<{ agentId: string }> }
+) {
   let connection;
   try {
-    const { params } = context;
-    const awaitedParams = await params;
-    console.log(`API: Fetching posts for agent ${awaitedParams.agentId}`);
+    const params = await context.params;
+    const { agentId } = params;
+    
+    console.log(`API: Fetching posts for agent ${agentId}`);
+    
+    // Test connection first
+    const isConnected = await testConnection();
+    if (!isConnected) {
+      console.error('API: Database connection failed');
+      return NextResponse.json({ 
+        error: "Database connection failed",
+        posts: [],
+        count: 0
+      }, { status: 500 });
+    }
+    
+    // Initialize database
+    await initializeDatabase();
+    
     connection = await db.getConnection();
 
     // Query posts with proper column mapping
@@ -20,14 +42,15 @@ export async function GET(request: Request, context: { params: { agentId: string
         date,
         caption,
         original_url AS originalUrl,
-        thumbnail
+        thumbnail,
+        enhanced_content AS enhancedContent
       FROM posts 
       WHERE agent_id = ?
       ORDER BY date DESC, created_at DESC`,
-      [awaitedParams.agentId]
+      [agentId]
     );
 
-    console.log(`API: Found ${(posts as any[]).length} posts for agent ${awaitedParams.agentId}`);
+    console.log(`API: Found ${(posts as any[]).length} posts for agent ${agentId}`);
 
     const formattedPosts = (posts as any[]).map(post => ({
       id: post.id,
@@ -38,26 +61,34 @@ export async function GET(request: Request, context: { params: { agentId: string
       date: post.date,
       caption: post.caption || '',
       originalUrl: post.originalUrl || '',
-      thumbnail: post.thumbnail, // Use the thumbnail from database
+      thumbnail: post.thumbnail,
       media: {
-        type: 'image', // Default to image
-        thumbnail: post.thumbnail // Use database thumbnail
-      }
+        type: 'image',
+        thumbnail: post.thumbnail
+      },
+      enhancedContent: post.enhancedContent || null
     }));
 
-    console.log(`API: Returning formatted posts:`, formattedPosts);
+    console.log(`API: Returning formatted posts:`, formattedPosts.length);
 
     return NextResponse.json({ 
       posts: formattedPosts,
       count: formattedPosts.length 
-    }, { status: 200 });
+    }, { 
+      status: 200,
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
 
   } catch (error) {
     console.error("Database error:", error);
     return NextResponse.json({ 
       error: "Internal server error",
       details: error instanceof Error ? error.message : 'Unknown error',
-      posts: [] // Return empty array as fallback
+      posts: []
     }, { status: 500 });
   } finally {
     if (connection) {

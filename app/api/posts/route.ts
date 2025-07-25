@@ -1,10 +1,28 @@
-import { db } from "@/lib/db";
-import { NextResponse } from "next/server";
+import { db, testConnection, initializeDatabase } from "@/lib/db";
+import { NextRequest, NextResponse } from "next/server";
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET() {
   let connection;
   try {
     console.log('API: Fetching all posts');
+    
+    // Test connection first
+    const isConnected = await testConnection();
+    if (!isConnected) {
+      console.error('API: Database connection failed');
+      return NextResponse.json({ 
+        error: "Database connection failed",
+        posts: [],
+        count: 0
+      }, { status: 500 });
+    }
+    
+    // Initialize database
+    await initializeDatabase();
+    
     connection = await db.getConnection();
 
     const [posts] = await connection.query(
@@ -32,10 +50,10 @@ export async function GET() {
       date: post.date,
       caption: post.caption,
       originalUrl: post.originalUrl,
-      thumbnail: post.thumbnail, // Use thumbnail from database
+      thumbnail: post.thumbnail,
       media: {
         type: 'image',
-        thumbnail: post.thumbnail // Use database thumbnail
+        thumbnail: post.thumbnail
       },
       enhancedContent: post.enhancedContent
     }));
@@ -44,7 +62,14 @@ export async function GET() {
     return NextResponse.json({ 
       posts: formattedPosts,
       count: formattedPosts.length 
-    }, { status: 200 });
+    }, { 
+      status: 200,
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
 
   } catch (error) {
     console.error("Database error:", error);
@@ -60,11 +85,23 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   let connection;
   try {
     const body = await request.json();
     const { id, agentId, title, content, transcription, caption, originalUrl, thumbnail } = body;
+
+    // Test connection
+    const isConnected = await testConnection();
+    if (!isConnected) {
+      console.error('API: Database connection failed');
+      return NextResponse.json({ 
+        error: "Database connection failed"
+      }, { status: 500 });
+    }
+
+    // Initialize database
+    await initializeDatabase();
 
     connection = await db.getConnection();
 
