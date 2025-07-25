@@ -85,31 +85,29 @@ export async function getAgentPosts(agentId: string): Promise<Post[]> {
   }
 }
 
-export async function getAllAgents(): Promise<Agent[]> {
+// @/lib/data.ts
+// @/lib/data.ts
+export async function getAllAgents() {
   try {
-    const baseUrl = getBaseUrl();
-    const url = `${baseUrl}/api/agents`;
-
-    console.log('Fetching agents from:', url);
-
-    const response = await fetch(url, {
-      cache: 'no-store',
+    console.log("getAllAgents: Fetching agents...");
+    const response = await fetch(`${process.env.API_BASE_URL}/api/agents`, {
+      method: "GET",
       headers: {
-        'Content-Type': 'application/json',
-      }
+        "Content-Type": "application/json",
+        "x-api-key": process.env.API_KEY || "",
+      },
+      // Remove cache: "no-store" for static generation
+      next: { revalidate: 3600 }, // Revalidate every hour
     });
-
+    console.log("getAllAgents: Response status:", response.status);
     if (!response.ok) {
-      console.error(`Failed to fetch agents: ${response.status} ${response.statusText}. URL: ${url}`);
-      return [];
+      throw new Error(`Failed to fetch agents: ${response.status} ${response.statusText}`);
     }
-
     const data = await response.json();
-    console.log('Agents data received:', data);
-    // FIX/CHECK: 'data.agents' vs 'data'. Verify your API implementation.
+    console.log("getAllAgents: Agents fetched:", data.agents);
     return data.agents || [];
   } catch (error) {
-    console.error("Error fetching agents:", error);
+    console.error("getAllAgents: Error:", error);
     return [];
   }
 }

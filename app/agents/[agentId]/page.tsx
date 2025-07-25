@@ -46,14 +46,12 @@ export default async function AgentPage({ params }: AgentPageProps) {
 
   return <AgentPageClient agent={agent} />;
 }
-
 export async function generateStaticParams() {
   try {
     console.log('generateStaticParams: Fetching all agents...');
     const agents = await getAllAgents();
     console.log('generateStaticParams: Found agents:', agents?.length || 0);
-    
-    return agents.map((agent) => ({
+    return agents.map((agent: { id: any; }) => ({
       agentId: agent.id,
     }));
   } catch (error) {

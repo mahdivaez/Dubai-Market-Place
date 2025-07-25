@@ -2,23 +2,11 @@ import mysql from 'mysql2/promise';
 
 // Create connection pool for better performance
 export const db = mysql.createPool({
-  host: process.env.DB_HOST || 'mysql-production-308f.up.railway.app',
-  port: parseInt(process.env.DB_PORT || '3306'),
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || 'fNAIBOTGTwJXyqnqNcGtHuqoQRTIphrh',
-  database: process.env.DB_NAME || 'railway',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-  acquireTimeout: 30000,
-  connectTimeout: 30000,
-  idleTimeout: 600000,
-  timeout: 60000,
-  ssl: {
-    rejectUnauthorized: false
-  },
-  charset: 'utf8mb4',
-  multipleStatements: false
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  connectTimeout: 10000, // Correct option
 });
 
 // Test database connection
