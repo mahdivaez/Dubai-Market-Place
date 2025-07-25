@@ -28,24 +28,15 @@ export interface Post {
 // Helper function to get the base URL
 function getBaseUrl() {
   if (typeof window !== 'undefined') {
-    // Client side
-    // POTENTIAL BUG: Returning '' means relative paths. This works ONLY if the API is on the same origin (same domain, same port) as the frontend.
-    // If your API is on a subdomain, different port, or a completely different service, '' will result in incorrect URLs (e.g., trying to fetch from example.com/api/posts/1 when API is api.example.com/api/posts/1).
-    // For Next.js, relative paths usually work well if your API routes are in `pages/api`.
-    // If you're seeing 404s, this is often the FIRST place to check.
-    // Suggestion for debugging:
-    // return window.location.origin; // This will return 'http://localhost:3000' or 'https://your-vercel-app.vercel.app'
-    return ''; // Keep as '' if you are confident your Next.js setup handles relative paths correctly for internal API routes.
+    return '';
   }
 
-  // Server side
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
 
   return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 }
-
 export async function getAgentById(agentId: string): Promise<Agent | null> {
   try {
     const baseUrl = getBaseUrl();
