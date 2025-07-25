@@ -1,16 +1,29 @@
-import { db } from "@/lib/db";
+import { db, testConnection, initializeDatabase } from "@/lib/db";
 import { NextResponse } from "next/server";
 
 export async function GET() {
   let connection;
   try {
     console.log('API: Starting to fetch agents...');
+    
+    // Test connection first
+    const isConnected = await testConnection();
+    if (!isConnected) {
+      console.error('API: Database connection failed');
+      return NextResponse.json({ 
+        error: "Database connection failed",
+        agents: [],
+        count: 0
+      }, { status: 500 });
+    }
+    
+    // Initialize database if needed
+    await initializeDatabase();
+    
     connection = await db.getConnection();
     console.log('API: Database connection established');
 
-    // FIX: The SQL query now uses 'AS' to alias 'profile_image' to 'profileImage'.
-    // This ensures the object returned from the database has the correct property name
-    // that the frontend components expect.
+    // Query with proper column aliasing
     const [agents] = await connection.query(
       `SELECT 
         id, 
@@ -18,29 +31,49 @@ export async function GET() {
         profile_image AS profileImage, 
         address, 
         bio, 
+        phone,
+        email,
         instagram, 
         twitter, 
-        linkedin
+        linkedin,
+        created_at,
+        updated_at
        FROM agents 
        ORDER BY name`
     );
 
-    console.log(`API: Found ${(agents as any[]).length} agents`);
+    const agentsArray = agents as any[];
+    console.log(`API: Found ${agentsArray.length} agents`);
+    
+    if (agentsArray.length > 0) {
+      console.log('API: Sample agent data:', {
+        id: agentsArray[0].id,
+        name: agentsArray[0].name,
+        profileImage: agentsArray[0].profileImage,
+        instagram: agentsArray[0].instagram
+      });
+    }
 
-    // FIX: The manual mapping ('formattedAgents') is no longer needed because the SQL alias
-    // has already structured the data correctly. We can return the result directly.
-    console.log('API: Returning agents data:', agents);
     return NextResponse.json({ 
-      agents: agents,
-      count: (agents as any[]).length 
-    }, { status: 200 });
+      agents: agentsArray,
+      count: agentsArray.length,
+      success: true
+    }, { 
+      status: 200,
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
 
   } catch (error) {
-    console.error("Database error:", error);
+    console.error("API: Database error:", error);
     return NextResponse.json({ 
       error: "Internal server error",
       details: error instanceof Error ? error.message : 'Unknown error',
-      agents: [] // Return empty array as fallback
+      agents: [],
+      count: 0
     }, { status: 500 });
   } finally {
     if (connection) {
@@ -49,27 +82,36 @@ export async function GET() {
   }
 }
 
-// The POST function does not need any changes.
 export async function POST(request: Request) {
   let connection;
   try {
     const body = await request.json();
-    const { id, name, profileImage, address, bio, instagram, twitter, linkedin } = body;
+    const { id, name, profileImage, address, bio, phone, email, instagram, twitter, linkedin } = body;
+
+    console.log('API: Creating new agent:', { id, name, instagram });
 
     connection = await db.getConnection();
 
     await connection.query(
-      `INSERT INTO agents (id, name, profile_image, address, bio, instagram, twitter, linkedin) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      // Note: When inserting, we still use the correct database column name 'profile_image'.
-      [id, name, profileImage, address, bio, instagram, twitter, linkedin]
+      `INSERT INTO agents (id, name, profile_image, address, bio, phone, email, instagram, twitter, linkedin) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, name, profileImage, address, bio, phone, email, instagram, twitter, linkedin]
     );
 
-    return NextResponse.json({ message: "Agent created successfully" }, { status: 201 });
+    console.log('API: Agent created successfully:', id);
+
+    return NextResponse.json({ 
+      message: "Agent created successfully",
+      agentId: id,
+      success: true
+    }, { status: 201 });
 
   } catch (error) {
-    console.error("Database error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console.error("API: Error creating agent:", error);
+    return NextResponse.json({ 
+      error: "Internal server error",
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   } finally {
     if (connection) {
       connection.release();

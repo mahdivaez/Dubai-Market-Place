@@ -6,12 +6,12 @@ export interface Agent {
   instagram?: string;
   twitter?: string;
   linkedin?: string;
-  profileImage?: string; // Potential Mismatch: DB has 'profile_image', interface has 'profileImage'. Ensure your API route handles this casing.
+  profileImage?: string;
 }
 
 export interface Post {
   id: string;
-  agentId: string; // Potential Mismatch: DB has 'agent_id', interface has 'agentId'. Ensure your API route handles this casing.
+  agentId: string;
   title: string;
   content: string;
   transcription?: string;
@@ -20,38 +20,54 @@ export interface Post {
   media?: {
     type: string;
     thumbnail: string;
-  }; // Logic Issue: Your DB schema only has 'thumbnail'. If frontend expects 'media.thumbnail', your API route must construct this object.
+  };
   caption: string;
-  originalUrl: string; // Potential Mismatch: DB has 'original_url', interface has 'originalUrl'. Ensure your API route handles this casing.
+  originalUrl: string;
 }
 
 // Helper function to get the base URL
 function getBaseUrl() {
+  // In browser environment
   if (typeof window !== 'undefined') {
-    return '';
+    return window.location.origin;
   }
 
+  // In Vercel environment
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
 
-  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+  // Use configured API base URL or fallback to localhost
+  return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
 }
-export async function getAgentById(agentId: string) {
+
+export async function getAgentById(agentId: string): Promise<Agent | null> {
   try {
-    const apiBaseUrl = process.env.API_BASE_URL || "https://dubai-market-place.vercel.app";
-    const response = await fetch(`${apiBaseUrl}/api/agents/${agentId}`, {
+    console.log('getAgentById: Fetching agent:', agentId);
+    const baseUrl = getBaseUrl();
+    const url = `${baseUrl}/api/agents/${agentId}`;
+    
+    console.log('getAgentById: Making request to:', url);
+    
+    const response = await fetch(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": process.env.MY_API_KEY || "",
+        "x-api-key": process.env.NEXT_PUBLIC_API_KEY || "",
       },
-      next: { revalidate: 3600 },
+      cache: "no-store", // Changed from next: { revalidate: 3600 } for better debugging
     });
+    
+    console.log('getAgentById: Response status:', response.status, response.statusText);
+    
     if (!response.ok) {
-      throw new Error(`Failed to fetch agent: ${response.status}`);
+      const errorText = await response.text();
+      console.error('getAgentById: Error response:', errorText);
+      throw new Error(`Failed to fetch agent: ${response.status} - ${errorText}`);
     }
+    
     const data = await response.json();
+    console.log('getAgentById: Response data:', data);
     return data.agent || null;
   } catch (error) {
     console.error("getAgentById: Error:", error);
@@ -64,50 +80,57 @@ export async function getAgentPosts(agentId: string): Promise<Post[]> {
     const baseUrl = getBaseUrl();
     const url = `${baseUrl}/api/agents/${agentId}/posts`;
 
-    console.log('Fetching agent posts from:', url);
+    console.log('getAgentPosts: Fetching from:', url);
 
     const response = await fetch(url, {
       cache: 'no-store',
       headers: {
         'Content-Type': 'application/json',
+        "x-api-key": process.env.NEXT_PUBLIC_API_KEY || "",
       }
     });
 
     if (!response.ok) {
-      console.error(`Failed to fetch agent posts: ${response.status} ${response.statusText}. URL: ${url}`); // Added URL to log
+      const errorText = await response.text();
+      console.error(`getAgentPosts: Failed - ${response.status} ${response.statusText}. Response:`, errorText);
       return [];
     }
 
     const data = await response.json();
-    console.log('Agent posts data received:', data);
-    // FIX/CHECK: 'data.posts' vs 'data'. Verify your API implementation.
+    console.log('getAgentPosts: Data received:', data);
     return data.posts || [];
   } catch (error) {
-    console.error("Error fetching posts:", error);
+    console.error("getAgentPosts: Error:", error);
     return [];
   }
 }
 
-// @/lib/data.ts
-// @/lib/data.ts
-export async function getAllAgents() {
+export async function getAllAgents(): Promise<Agent[]> {
   try {
-    const apiBaseUrl = process.env.API_BASE_URL || "https://dubai-market-place.vercel.app";
-    console.log("getAllAgents: Fetching agents from:", `${apiBaseUrl}/api/agents`);
-    const response = await fetch(`${apiBaseUrl}/api/agents`, {
+    const baseUrl = getBaseUrl();
+    const url = `${baseUrl}/api/agents`;
+    
+    console.log("getAllAgents: Fetching from:", url);
+    
+    const response = await fetch(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": process.env.MY_API_KEY || "",
+        "x-api-key": process.env.NEXT_PUBLIC_API_KEY || "",
       },
-      next: { revalidate: 3600 }, // Cache for 1 hour
+      cache: "no-store", // Changed for better debugging
     });
+    
     console.log("getAllAgents: Response status:", response.status, response.statusText);
+    
     if (!response.ok) {
-      throw new Error(`Failed to fetch agents: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('getAllAgents: Error response:', errorText);
+      throw new Error(`Failed to fetch agents: ${response.status} - ${errorText}`);
     }
+    
     const data = await response.json();
-    console.log("getAllAgents: Agents fetched:", data.agents);
+    console.log("getAllAgents: Data received:", data);
     return data.agents || [];
   } catch (error) {
     console.error("getAllAgents: Error:", error);
@@ -118,29 +141,29 @@ export async function getAllAgents() {
 export async function getPost(postId: string): Promise<Post | null> {
   try {
     const baseUrl = getBaseUrl();
-    const url = `${baseUrl}/api/posts/${postId}`; // This endpoint is crucial
+    const url = `${baseUrl}/api/posts/${postId}`;
 
-    console.log('Fetching post from:', url);
+    console.log('getPost: Fetching from:', url);
 
     const response = await fetch(url, {
       cache: 'no-store',
       headers: {
         'Content-Type': 'application/json',
+        "x-api-key": process.env.NEXT_PUBLIC_API_KEY || "",
       }
     });
 
     if (!response.ok) {
-      // THIS IS WHERE THE 404 IS REPORTED!
-      console.error(`Failed to fetch post: ${response.status} ${response.statusText}. URL: ${url}`);
+      const errorText = await response.text();
+      console.error(`getPost: Failed - ${response.status} ${response.statusText}. Response:`, errorText);
       return null;
     }
 
     const data = await response.json();
-    console.log('Post data received:', data);
-    // FIX/CHECK: 'data.post' vs 'data'. Verify your API implementation for single post.
+    console.log('getPost: Data received:', data);
     return data.post;
   } catch (error) {
-    console.error("Error fetching post:", error);
+    console.error("getPost: Error:", error);
     return null;
   }
 }
@@ -150,26 +173,27 @@ export async function getAllPosts(): Promise<Post[]> {
     const baseUrl = getBaseUrl();
     const url = `${baseUrl}/api/posts`;
 
-    console.log('Fetching all posts from:', url);
+    console.log('getAllPosts: Fetching from:', url);
 
     const response = await fetch(url, {
       cache: 'no-store',
       headers: {
         'Content-Type': 'application/json',
+        "x-api-key": process.env.NEXT_PUBLIC_API_KEY || "",
       }
     });
 
     if (!response.ok) {
-      console.error(`Failed to fetch posts: ${response.status} ${response.statusText}. URL: ${url}`);
+      const errorText = await response.text();
+      console.error(`getAllPosts: Failed - ${response.status} ${response.statusText}. Response:`, errorText);
       return [];
     }
 
     const data = await response.json();
-    console.log('All posts data received:', data);
-    // FIX/CHECK: 'data.posts' vs 'data'. Verify your API implementation.
+    console.log('getAllPosts: Data received:', data);
     return data.posts || [];
   } catch (error) {
-    console.error("Error fetching posts:", error);
+    console.error("getAllPosts: Error:", error);
     return [];
   }
 }

@@ -10,7 +10,6 @@ def check_db_connection():
         'port': 42664,
         # 'database': 'your_database_name' # Optional: uncomment and add if you want to connect to a specific database
     }
-
     try:
         # Attempt to establish a connection
         cnx = mysql.connector.connect(**DB_CONFIG)

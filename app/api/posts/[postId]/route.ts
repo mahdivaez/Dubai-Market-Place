@@ -1,11 +1,12 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 
-export async function GET(request: Request, { params }: { params: Promise<{ postId: string }> }) {
+export async function GET(request: Request, context: { params: { postId: string } }) {
   let connection;
   try {
-    const { postId } = await params; // Await params to get postId
-    console.log(`API: Fetching post ${postId}`);
+    const { params } = context;
+    const awaitedParams = await params;
+    console.log(`API: Fetching post ${awaitedParams.postId}`);
     connection = await db.getConnection();
 
     const [posts] = await connection.query(
@@ -18,14 +19,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ post
         date,
         caption,
         original_url AS originalUrl,
-        thumbnail
+        thumbnail,
+        enhanced_content AS enhancedContent
       FROM posts 
       WHERE id = ?`,
-      [postId]
+      [awaitedParams.postId]
     );
 
     if (!posts || (posts as any[]).length === 0) {
-      console.log(`API: Post ${postId} not found`);
+      console.log(`API: Post ${awaitedParams.postId} not found`);
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
@@ -39,15 +41,17 @@ export async function GET(request: Request, { params }: { params: Promise<{ post
       date: post.date,
       caption: post.caption || '',
       originalUrl: post.originalUrl || '',
-      thumbnail: post.thumbnail,
+      thumbnail: post.thumbnail, // Use thumbnail from database
       media: {
-        type: 'image',
-        thumbnail: post.thumbnail
-      }
+        type: 'image', // Default to image
+        thumbnail: post.thumbnail // Use database thumbnail
+      },
+      enhancedContent: post.enhancedContent || null
     };
 
-    console.log(`API: Found post ${postId}:`, formattedPost);
+    console.log(`API: Found post ${awaitedParams.postId}:`, formattedPost);
     return NextResponse.json({ post: formattedPost }, { status: 200 });
+
   } catch (error) {
     console.error("Database error:", error);
     return NextResponse.json({ 

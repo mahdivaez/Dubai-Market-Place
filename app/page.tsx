@@ -4,32 +4,32 @@ import ClientOnly from "@/components/ClientOnly"
 import ImageWithFallback from "@/components/ImageWithFallback"
 import { getImagePath, getInitials } from "@/lib/utils/imageUtils"
 
-
 export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   let agents: any[] = [];
   let error = null;
   
-
   try {
     console.log('Homepage: Starting to fetch agents...');
-    agents = await getAllAgents()
+    agents = await getAllAgents();
     console.log('Homepage: Received agents:', agents?.length || 0);
     
-    if (!agents || agents.length === 0) {
-      console.log('Homepage: No agents found, checking API directly...');
-      // Try to fetch directly from API to debug
-      const response = await fetch('http://localhost:3000/api/agents', {
-        cache: 'no-store'
+    if (agents && agents.length > 0) {
+      console.log('Homepage: First agent sample:', {
+        id: agents[0]?.id,
+        name: agents[0]?.name,
+        profileImage: agents[0]?.profileImage,
+        instagram: agents[0]?.instagram
       });
-      const data = await response.json();
-      console.log('Homepage: Direct API response:', data);
     }
+    
   } catch (err) {
     console.error('Homepage: Error fetching agents:', err);
     agents = [];
     error = 'Failed to load agents. Please check database connection.';
   }
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-amber-50/30">
@@ -83,7 +83,7 @@ export default async function HomePage() {
             بازار املاک دبی الیت
           </h1>
           <p className="text-xl lg:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed font-medium">
-            با بهترین متخصصان املاک دبی ارتباط برقرار کنید و خانه رویایی خود را در پویاترین شهر جهان کشف کنید$
+            با بهترین متخصصان املاک دبی ارتباط برقرار کنید و خانه رویایی خود را در پویاترین شهر جهان کشف کنید
           </p>
         </div>
 
