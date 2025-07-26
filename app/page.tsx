@@ -3,6 +3,8 @@ import Link from "next/link"
 import ClientOnly from "@/components/ClientOnly"
 import ImageWithFallback from "@/components/ImageWithFallback"
 import { getImagePath, getInitials } from "@/lib/utils/imageUtils"
+import DebugPanel from "@/components/DebugPanel"
+import EmptyState from "@/components/EmptyState"
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +31,6 @@ export default async function HomePage() {
     agents = [];
     error = 'Failed to load agents. Please check database connection.';
   }
-
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-amber-50/30">
@@ -65,6 +66,12 @@ export default async function HomePage() {
                 تست دیتابیس
               </Link>
               <Link 
+                href="/api/agents" 
+                className="text-gray-700 hover:text-amber-600 transition-colors font-medium px-4 py-2 rounded-lg hover:bg-amber-50"
+              >
+                API مشاوران
+              </Link>
+              <Link 
                 href="#contact" 
                 className="bg-gradient-to-r from-amber-500 to-orange-600 text-white px-6 py-3 rounded-xl hover:from-amber-600 hover:to-orange-700 transition-all duration-200 font-bold shadow-lg"
               >
@@ -87,47 +94,10 @@ export default async function HomePage() {
           </p>
         </div>
 
-        {/* Debug Info - Only show in development */}
-        {process.env.NODE_ENV === 'development' && (
-          <ClientOnly>
-            <div className="mb-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-200">
-              <h3 className="text-lg font-bold text-blue-900 mb-3">وضعیت توسعه</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div className="bg-white rounded-xl p-4 border border-blue-100">
-                  <p className="font-semibold text-blue-800">وضعیت دیتابیس</p>
-                  <p className={`font-medium ${error ? 'text-red-600' : 'text-green-600'}`}>
-                    {error ? 'قطع شده' : 'متصل'}
-                  </p>
-                </div>
-                <div className="bg-white rounded-xl p-4 border border-blue-100">
-                  <p className="font-semibold text-blue-800">مشاوران یافت شده</p>
-                  <p className="text-blue-600">{agents?.length || 0} مشاور</p>
-                </div>
-                <div className="bg-white rounded-xl p-4 border border-blue-100">
-                  <p className="font-semibold text-blue-800">سیستم</p>
-                  <p className="text-green-600">MySQL + Next.js</p>
-                </div>
-              </div>
-              {error && (
-                <div className="mt-4 p-4 bg-red-50 rounded-xl border border-red-200">
-                  <p className="text-red-800 font-medium">خطا: {error}</p>
-                </div>
-              )}
-              {agents && agents.length > 0 && (
-                <div className="mt-4 p-4 bg-green-50 rounded-xl border border-green-200">
-                  <p className="text-green-800 font-medium">
-                    مشاور نمونه: {agents[0]?.name} ({agents[0]?.id})
-                  </p>
-                  {agents[0]?.profileImage && (
-                    <p className="text-xs text-green-600 mt-1">
-                      تصویر پروفایل: {agents[0].profileImage} → {getImagePath(agents[0].profileImage)}
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-          </ClientOnly>
-        )}
+        {/* Debug Info - Show in development and when there are issues */}
+        <ClientOnly>
+          <DebugPanel error={error} agents={agents} />
+        </ClientOnly>
 
         {/* Agent Cards Grid */}
         {agents && agents.length > 0 ? (
@@ -191,36 +161,7 @@ export default async function HomePage() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-20">
-            <div className="bg-white rounded-3xl p-12 shadow-xl border border-gray-100 max-w-lg mx-auto">
-              <div className="w-20 h-20 bg-gradient-to-br from-gray-300 to-gray-400 rounded-3xl mx-auto mb-6 flex items-center justify-center">
-                <span className="text-white text-3xl">📊</span>
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                {error ? 'مشکل اتصال به دیتابیس' : 'مشاوری یافت نشد'}
-              </h3>
-              <p className="text-gray-500 mb-8 text-lg leading-relaxed">
-                {error 
-                  ? 'لطفاً اتصال دیتابیس MySQL خود را بررسی کنید و اطمینان حاصل کنید که جداول ایجاد شده‌اند.' 
-                  : 'در حال حاضر هیچ مشاوری در دیتابیس موجود نیست.'
-                }
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link 
-                  href="/api/test-db" 
-                  className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-bold shadow-lg"
-                >
-                  تست اتصال دیتابیس
-                </Link>
-                <Link 
-                  href="/api/agents" 
-                  className="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-bold shadow-lg"
-                >
-                  بررسی API مشاوران
-                </Link>
-              </div>
-            </div>
-          </div>
+          <EmptyState error={error} />
         )}
       </main>
 

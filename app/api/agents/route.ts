@@ -1,8 +1,5 @@
 import { db, testConnection, initializeDatabase } from "@/lib/db";
-import { NextRequest, NextResponse } from "next/server";
-
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+import { NextResponse } from "next/server";
 
 export async function GET() {
   let connection;
@@ -16,8 +13,7 @@ export async function GET() {
       return NextResponse.json({ 
         error: "Database connection failed",
         agents: [],
-        count: 0,
-        success: false
+        count: 0
       }, { status: 500 });
     }
     
@@ -77,8 +73,7 @@ export async function GET() {
       error: "Internal server error",
       details: error instanceof Error ? error.message : 'Unknown error',
       agents: [],
-      count: 0,
-      success: false
+      count: 0
     }, { status: 500 });
   } finally {
     if (connection) {
@@ -87,26 +82,13 @@ export async function GET() {
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   let connection;
   try {
     const body = await request.json();
     const { id, name, profileImage, address, bio, phone, email, instagram, twitter, linkedin } = body;
 
     console.log('API: Creating new agent:', { id, name, instagram });
-
-    // Test connection
-    const isConnected = await testConnection();
-    if (!isConnected) {
-      console.error('API: Database connection failed');
-      return NextResponse.json({ 
-        error: "Database connection failed",
-        success: false
-      }, { status: 500 });
-    }
-
-    // Initialize database
-    await initializeDatabase();
 
     connection = await db.getConnection();
 
@@ -128,8 +110,7 @@ export async function POST(request: NextRequest) {
     console.error("API: Error creating agent:", error);
     return NextResponse.json({ 
       error: "Internal server error",
-      details: error instanceof Error ? error.message : 'Unknown error',
-      success: false
+      details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   } finally {
     if (connection) {

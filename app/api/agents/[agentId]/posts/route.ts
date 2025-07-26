@@ -1,37 +1,16 @@
-import { db, testConnection, initializeDatabase } from "@/lib/db";
-import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { NextResponse } from "next/server";
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-
-export async function GET(
-  request: NextRequest, 
-  context: { params: Promise<{ agentId: string }> }
-) {
+export async function GET(request: Request, context: { params: { agentId: string } }) {
   let connection;
   try {
-    const params = await context.params;
-    const { agentId } = params;
-    
-    console.log(`API: Fetching posts for agent ${agentId}`);
-    
-    // Test connection first
-    const isConnected = await testConnection();
-    if (!isConnected) {
-      console.error('API: Database connection failed');
-      return NextResponse.json({ 
-        error: "Database connection failed",
-        posts: [],
-        count: 0
-      }, { status: 500 });
-    }
-    
-    // Initialize database
-    await initializeDatabase();
+    const { params } = context;
+    const awaitedParams = await params;
+    console.log(`API: Fetching posts for agent ${awaitedParams.agentId}`);
     
     connection = await db.getConnection();
 
-    // Query posts with proper column mapping
+    // Query posts with proper column mapping and ensure posts exist
     const [posts] = await connection.query(
       `SELECT 
         id,
@@ -42,17 +21,17 @@ export async function GET(
         date,
         caption,
         original_url AS originalUrl,
-        thumbnail,
-        enhanced_content AS enhancedContent
+        thumbnail
       FROM posts 
       WHERE agent_id = ?
       ORDER BY date DESC, created_at DESC`,
-      [agentId]
+      [awaitedParams.agentId]
     );
 
-    console.log(`API: Found ${(posts as any[]).length} posts for agent ${agentId}`);
+    const postsArray = posts as any[];
+    console.log(`API: Found ${postsArray.length} posts for agent ${awaitedParams.agentId}`);
 
-    const formattedPosts = (posts as any[]).map(post => ({
+    const formattedPosts = postsArray.map(post => ({
       id: post.id,
       agentId: post.agentId,
       title: post.title || '',
@@ -61,19 +40,29 @@ export async function GET(
       date: post.date,
       caption: post.caption || '',
       originalUrl: post.originalUrl || '',
-      thumbnail: post.thumbnail,
+      thumbnail: post.thumbnail || '', // Ensure we have a thumbnail value
       media: {
-        type: 'image',
-        thumbnail: post.thumbnail
-      },
-      enhancedContent: post.enhancedContent || null
+        type: 'image', // Default to image
+        thumbnail: post.thumbnail || '' // Use database thumbnail
+      }
     }));
 
-    console.log(`API: Returning formatted posts:`, formattedPosts.length);
+    console.log(`API: Returning formatted posts for agent ${awaitedParams.agentId}:`, formattedPosts.length);
+    
+    // Debug: Log first post if exists
+    if (formattedPosts.length > 0) {
+      console.log('API: Sample post:', {
+        id: formattedPosts[0].id,
+        title: formattedPosts[0].title,
+        thumbnail: formattedPosts[0].thumbnail
+      });
+    }
 
     return NextResponse.json({ 
       posts: formattedPosts,
-      count: formattedPosts.length 
+      count: formattedPosts.length,
+      agentId: awaitedParams.agentId,
+      success: true
     }, { 
       status: 200,
       headers: {
@@ -84,11 +73,13 @@ export async function GET(
     });
 
   } catch (error) {
-    console.error("Database error:", error);
+    console.error("API: Database error fetching posts:", error);
     return NextResponse.json({ 
       error: "Internal server error",
       details: error instanceof Error ? error.message : 'Unknown error',
-      posts: []
+      posts: [], // Return empty array as fallback
+      count: 0,
+      agentId: context.params?.agentId || 'unknown'
     }, { status: 500 });
   } finally {
     if (connection) {
