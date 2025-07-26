@@ -1,6 +1,5 @@
 import mysql from 'mysql2/promise';
 
-// Create connection pool for better performance with SSL configuration
 export const db = mysql.createPool({
   host: process.env.DB_HOST || 'turntable.proxy.rlwy.net',
   port: parseInt(process.env.DB_PORT || '42664'),
@@ -8,8 +7,6 @@ export const db = mysql.createPool({
   password: process.env.DB_PASSWORD || 'OlWIFZHFiPpWIXCfaWdBLhILYxoqgecm',
   database: process.env.DB_NAME || 'railway',
   connectTimeout: 30000,
-  acquireTimeout: 30000,
-  timeout: 30000,
   ssl: {
     rejectUnauthorized: false
   },
@@ -18,34 +15,25 @@ export const db = mysql.createPool({
   queueLimit: 0
 });
 
-// Test database connection
 export async function testConnection(): Promise<boolean> {
   try {
     console.log('🔄 Testing Railway MySQL connection...');
-    console.log(`📍 Host: ${process.env.DB_HOST}`);
-    console.log(`🔌 Port: ${process.env.DB_PORT}`);
-    console.log(`🗄️  Database: ${process.env.DB_NAME}`);
-    console.log(`👤 User: ${process.env.DB_USER}`);
-    
     const connection = await db.getConnection();
     await connection.ping();
     console.log('✅ Railway MySQL Database connected successfully');
     connection.release();
     return true;
   } catch (error) {
-    console.error('❌ Railway MySQL Database connection failed:');
-    console.error('Error details:', error);
+    console.error('❌ Railway MySQL Database connection failed:', error);
     return false;
   }
 }
 
-// Initialize database tables and sample data
 export async function initializeDatabase(): Promise<void> {
   let connection;
   try {
     connection = await db.getConnection();
     
-    // Create agents table if it doesn't exist
     await connection.query(`
       CREATE TABLE IF NOT EXISTS agents (
         id VARCHAR(255) PRIMARY KEY,
@@ -63,7 +51,6 @@ export async function initializeDatabase(): Promise<void> {
       )
     `);
     
-    // Create posts table if it doesn't exist
     await connection.query(`
       CREATE TABLE IF NOT EXISTS posts (
         id VARCHAR(255) PRIMARY KEY,
@@ -82,16 +69,12 @@ export async function initializeDatabase(): Promise<void> {
       )
     `);
     
-    console.log('📋 Database tables created/verified');
-    
-    // Check if agents table has data
     const [agents] = await connection.query('SELECT COUNT(*) as count FROM agents');
     const agentCount = (agents as any[])[0].count;
     
     if (agentCount === 0) {
       console.log('📝 Inserting sample data...');
       
-      // Insert sample agents with profile images
       await connection.query(`
         INSERT INTO agents (id, name, profile_image, address, bio, phone, email, instagram, twitter, linkedin) VALUES
         ('ahmed-hassan', 'Ahmed Hassan', '/agents/ahmed-hassan/profile.jpg', 'Downtown Dubai, UAE', 'مشاور املاک حرفه‌ای متخصص در املاک لوکس دبی. بیش از ۸ سال تجربه در صنعت املاک و کمک به مشتریان برای یافتن خانه رویایی و فرصت‌های سرمایه‌گذاری در مناطق معتبر دبی.', '+971 50 123 4567', 'ahmed.hassan@dubaiagents.com', 'ahmed_dubai_properties', 'ahmed_dubai_re', 'ahmed-hassan-dubai'),
@@ -102,7 +85,6 @@ export async function initializeDatabase(): Promise<void> {
         ('fatima-al-zahra', 'Fatima Al Zahra', '/agents/fatima-al-zahra/profile.jpg', 'Arabian Ranches, UAE', 'متخصص در محله‌های ویلایی و توسعه‌های خانواده‌محور. متخصص Arabian Ranches، Mudon و سایر محله‌های ویلایی با احساس قوی اجتماع.', '+971 55 678 9012', 'fatima.alzahra@dubaiagents.com', 'fatima_dubai_villas', NULL, 'fatima-al-zahra-dubai')
       `);
       
-      // Insert sample posts with thumbnails
       await connection.query(`
         INSERT INTO posts (id, agent_id, title, content, transcription, caption, date, original_url, thumbnail) VALUES
         ('post-1', 'ahmed-hassan', 'آپارتمان شگفت‌انگیز دبی سنتر', 'آپارتمان زیبای ۲ خوابه با نمای برج خلیفه', 'این آپارتمان فوق‌العاده در قلب دبی سنتر واقع شده و نمای بی‌نظیری از برج خلیفه دارد. با امکانات مدرن و دسترسی آسان به مراکز خرید و رستوران‌های معتبر، این ملک انتخابی عالی برای زندگی یا سرمایه‌گذاری است.', '🏙️ یکی دیگر از معاملات شگفت‌انگیز در دبی سنتر! این آپارتمان خیره‌کننده ۲ خوابه با نمای برج خلیفه اکنون خانه خانوادهای دوست‌داشتنی از انگلیس است. بازار املاک دبی همچنان رشد قوی‌ای را نشان می‌دهد، به خصوص در مکان‌های اصلی مانند این. #DubaiRealEstate #DowntownDubai #BurjKhalifaViews #PropertyInvestment', '2024-01-15 10:30:00', 'https://instagram.com/p/example1', '/agents/ahmed-hassan/posts/post-1.jpg'),
@@ -113,8 +95,6 @@ export async function initializeDatabase(): Promise<void> {
       `);
       
       console.log('✅ Sample data inserted successfully');
-    } else {
-      console.log(`📊 Database already has ${agentCount} agents`);
     }
     
   } catch (error) {
