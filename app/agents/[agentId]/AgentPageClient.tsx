@@ -61,8 +61,8 @@ export default function AgentPageClient({ agent }: AgentPageClientProps) {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-        },
-        cache: "no-store",
+        }
+       
       })
 
       console.log("AgentPageClient: Posts API response status:", response.status)

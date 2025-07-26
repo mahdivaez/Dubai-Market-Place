@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { ChevronUp, Share2, Mail, Phone, ArrowLeft, Calendar, MapPin, Instagram } from "lucide-react"
-import { containsPersianText } from "@/lib/utils/imageUtils"
 
 interface Agent {
   id: string
@@ -65,6 +64,11 @@ function getImagePath(imagePath: string | undefined): string {
 }
 
 // Helper function to detect if text contains Persian/Arabic characters
+function containsPersianText(text: string): boolean {
+  const persianRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/
+  return persianRegex.test(text)
+}
+
 export default function PostPageClient({ agent, post }: PostPageClientProps) {
   const [showBackToTop, setShowBackToTop] = useState(false)
   const [showShareSuccess, setShowShareSuccess] = useState(false)
@@ -80,7 +84,6 @@ export default function PostPageClient({ agent, post }: PostPageClientProps) {
   }, [])
 
   const imageSrc = getImagePath(post.media?.thumbnail || post.thumbnail)
-  console.log('PostPageClient: Image src:', imageSrc);
 
   const handleShare = async () => {
     const url = window.location.href
@@ -112,6 +115,7 @@ export default function PostPageClient({ agent, post }: PostPageClientProps) {
 
   // Detect RTL content
   const isContentRTL = containsPersianText(post.content || '')
+  const isCaptionRTL = containsPersianText(post.caption || '')
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-amber-50/30" dir="rtl">
