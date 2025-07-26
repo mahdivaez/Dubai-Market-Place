@@ -1,24 +1,28 @@
-"use client"
+"use client";
 
-import Image from "next/image"
-import { useState } from "react"
+import Image from "next/image";
+import { useState } from "react";
 
 type AgentProfileImageProps = {
-  src: string
-  alt: string
-  className?: string
-}
+  src: string;
+  alt: string;
+  className?: string;
+  fallbackSrc?: string;
+};
 
-export default function AgentProfileImage({ src, alt, className }: AgentProfileImageProps) {
-  const [error, setError] = useState(false)
+export default function AgentProfileImage({ src, alt, className, fallbackSrc = "/placeholder-user.jpg" }: AgentProfileImageProps) {
+  const [error, setError] = useState(false);
 
   if (error) {
-    // Show fallback (initials or placeholder)
     return (
-      <div className="w-full h-full flex items-center justify-center bg-gray-300">
-        <span className="text-white font-semibold text-lg">?</span>
-      </div>
-    )
+      <Image
+        src={fallbackSrc}
+        alt={alt}
+        fill
+        className={className}
+        onError={() => console.error(`Failed to load fallback image: ${fallbackSrc}`)}
+      />
+    );
   }
 
   return (
@@ -27,7 +31,12 @@ export default function AgentProfileImage({ src, alt, className }: AgentProfileI
       alt={alt}
       fill
       className={className}
-      onError={() => setError(true)}
+      onError={() => {
+        console.log(`Image load failed: ${src}`);
+        setError(true);
+      }}
+      priority={false}
+      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
     />
-  )
-} 
+  );
+}

@@ -1,5 +1,5 @@
 import { getAgentById } from "@/lib/data";
-import { db } from "@/lib/db";
+import { notFound } from "next/navigation";
 import AgentPageClient from "./AgentPageClient";
 
 interface Agent {
@@ -20,52 +20,46 @@ interface AgentPageProps {
 }
 
 export default async function AgentPage({ params }: AgentPageProps) {
-  console.log('AgentPage: Fetching agent with ID:', params.agentId);
+  console.log("AgentPage: Fetching agent with ID:", params.agentId);
   
   const agent: Agent | null = await getAgentById(params.agentId);
-  console.log('AgentPage: Agent data received:', agent);
+  console.log("AgentPage: Agent data received:", agent);
 
   if (!agent) {
-    console.log('AgentPage: Agent not found');
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Agent Not Found</h1>
-          <p className="text-gray-600">
-            The agent with ID "{params.agentId}" does not exist.
-          </p>
-          <a
-            href="/"
-            className="mt-4 inline-block text-blue-600 hover:text-blue-800 underline"
-          >
-            Back to Home
-          </a>
-        </div>
-      </div>
-    );
+    console.log("AgentPage: Agent not found");
+    notFound();
   }
 
   return <AgentPageClient agent={agent} />;
 }
 
 export async function generateStaticParams() {
-  let connection;
   try {
-    console.log('generateStaticParams: Getting database connection...');
-    connection = await db.getConnection();
-    
-    const [agents] = await connection.query('SELECT id FROM agents');
-    console.log('generateStaticParams: Found agents:', agents);
-    
-    return (agents as any[]).map((agent) => ({
-      agentId: agent.id,
-    }));
-  } catch (error) {
-    console.error('generateStaticParams: Error:', error);
-    return [];
-  } finally {
-    if (connection) {
-      connection.release();
+    console.log("generateStaticParams: Fetching all agents...");
+    const response = await fetch(
+      `${process.env.API_BASE_URL || "https://dubai-market-place.vercel.app"}/api/agents`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": process.env.MY_API_KEY || "",
+        },
+        next: { revalidate: 3600 },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch agents: ${response.status}`);
     }
+
+    const data = await response.json();
+    console.log("generateStaticParams: Agents fetched:", data.agents?.length || 0);
+
+    return data.agents?.map((agent: { id: string }) => ({
+      agentId: agent.id,
+    })) || [];
+  } catch (error) {
+    console.error("generateStaticParams: Error:", error);
+    return [];
   }
 }
