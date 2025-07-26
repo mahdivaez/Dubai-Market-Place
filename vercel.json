@@ -3,12 +3,9 @@
     "env": {
       "API_BASE_URL": "https://dubai-market-place.vercel.app",
       "NEXT_PUBLIC_API_BASE_URL": "https://dubai-market-place.vercel.app",
-      "MY_API_KEY": "sk_added192b7fb83218d65e56554bb8c8b569ad9a9d610c9e4",
-      "NEXT_PUBLIC_API_KEY": "sk_added192b7fb83218d65e56554bb8c8b569ad9a9d610c9e4",
       "DB_HOST": "turntable.proxy.rlwy.net",
       "DB_PORT": "42664",
       "DB_USER": "root",
-      "DB_PASSWORD": "OlWIFZHFiPpWIXCfaWdBLhILYxoqgecm",
       "DB_NAME": "railway"
     },
     "build": {
@@ -18,7 +15,7 @@
       }
     },
     "functions": {
-      "api/**/*": {
+      "pages/api/**/*": {
         "memory": 512,
         "maxDuration": 30
       }
