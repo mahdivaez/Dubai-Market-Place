@@ -6,7 +6,8 @@
       "DB_HOST": "turntable.proxy.rlwy.net",
       "DB_PORT": "42664",
       "DB_USER": "root",
-      "DB_NAME": "railway"
+      "DB_NAME": "railway",
+      "NEXT_PUBLIC_API_KEY": "your-actual-api-key-here"
     },
     "build": {
       "env": {

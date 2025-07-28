@@ -6,7 +6,7 @@ export async function GET(request: Request, context: { params: { agentId: string
   console.log(`API/agents/[agentId]/posts: Fetching posts for agent ${params.agentId}`);
 
   const apiKey = request.headers.get("x-api-key");
-  if (!apiKey || apiKey !== process.env.MY_API_KEY) {
+  if (!apiKey || apiKey !== process.env.NEXT_PUBLIC_API_KEY) {
     console.log(`API/agents/[agentId]/posts: Unauthorized access attempt for agent ${params.agentId}`);
     return NextResponse.json(
       { error: "Unauthorized", details: "Invalid API key", posts: [], count: 0, agentId: params.agentId },

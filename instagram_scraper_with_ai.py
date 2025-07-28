@@ -510,7 +510,7 @@ def process_single_post(post, agent_id, connection, download_folder, current_pos
 
         persian_char_count = count_persian_characters(original_transcription)
 
-        if persian_char_count < 50:
+        if persian_char_count < 0:
             add_to_filtered_posts(connection, agent_id, post_shortcode, f"insufficient_persian_chars_{persian_char_count}")
             return None, "filtered"
 

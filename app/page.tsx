@@ -13,25 +13,8 @@ export default async function HomePage() {
   let error: string | null = null;
 
   try {
-    console.log("Homepage: Starting to fetch agents...");
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL || "https://dubai-market-place.vercel.app"}/api/agents`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": process.env.MY_API_KEY || "",
-        },
-        next: { revalidate: 3600 },
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch agents: ${response.status}`);
-    }
-
-    const data = await response.json();
-    agents = data.agents || [];
+    // Use direct data access instead of fetch
+    agents = await getAllAgents();
     console.log("Homepage: Received agents:", agents.length);
 
     if (agents.length > 0) {

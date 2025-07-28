@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Instagram, Twitter, Linkedin, Mail, Phone, MoreHorizontal, MapPin, Calendar, Star, Users, Camera, ArrowRight } from "lucide-react";
 import ClientOnly from "@/components/ClientOnly";
 import ImageWithFallback from "@/components/ImageWithFallback";
-import { getImagePath, containsPersianText, getInitials } from "@/lib/utils/imageUtils";
+import { getImagePath, getInitials } from "@/lib/utils/imageUtils";
 
 interface Agent {
   id: string;
@@ -69,6 +69,7 @@ export default function AgentPageClient({ agent }: AgentPageClientProps) {
       console.log("AgentPageClient: Posts API response status:", response.status, response.statusText);
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        console.error(`Failed to fetch posts: ${response.status} - ${errorData.details || "Unknown error"}`);
         throw new Error(`Failed to fetch posts: ${response.status} - ${errorData.details || "Unknown error"}`);
       }
 
@@ -87,7 +88,8 @@ export default function AgentPageClient({ agent }: AgentPageClientProps) {
   useEffect(() => {
     console.log("AgentPageClient: useEffect triggered", { agentId: agent?.id, hasFetched });
     if (agent?.id && !hasFetched) {
-      fetchPosts();    }
+      fetchPosts();
+    }
   }, [agent?.id, hasFetched, fetchPosts]);
 
   if (!agent) {
@@ -116,7 +118,7 @@ export default function AgentPageClient({ agent }: AgentPageClientProps) {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4 space-x-reverse">
-              <div className="w-12 h-12 bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 rounded-2xl flex items-center justify-center shadow-lg">
+              <div className="w-12 h-12 bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 rounded-2xl flex items-center justify-center">
                 <span className="text-white font-bold text-xl">د</span>
               </div>
               <div className="hidden sm:block">
@@ -152,8 +154,8 @@ export default function AgentPageClient({ agent }: AgentPageClientProps) {
 
       <main className="max-w-7xl mx-auto px-6 py-12">
         <div className="bg-gradient-to-br from-white via-gray-50 to-amber-50/50 rounded-3xl p-12 shadow-2xl border border-gray-100 mb-16 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-64 h-64 bg-gradient-to-bl from-amber-200/30 to-orange-200/30 rounded-full -translate-y-32 -translate-x-32"></div>
-          <div className="absolute bottom-0 right-0 w-48 h-48 bg-gradient-to-tr from-blue-200/30 to-indigo-200/30 rounded-full translate-y-24 translate-x-24"></div>
+          <div className="absolute top-0 left-0 w-64 h-64 bg-gradient-to-bl from-amber-400 to-orange-500 rounded-full -translate-y-32 -translate-x-32"></div>
+          <div className="absolute bottom-0 right-0 w-48 h-48 bg-gradient-to-tr from-blue-200 to-indigo-200 rounded-full translate-y-24 translate-x-24"></div>
           <div className="relative z-10">
             <div className="flex flex-col lg:flex-row items-center lg:items-start space-y-8 lg:space-y-0 lg:space-x-12 lg:space-x-reverse">
               <div className="relative">
@@ -167,7 +169,7 @@ export default function AgentPageClient({ agent }: AgentPageClientProps) {
                       fallbackSrc="/placeholder-user.jpg"
                     />
                   ) : (
-                    <span className="text-white font-bold text-8xl">
+                    <span className="text-white font-bold text-lg">
                       {getInitials(agent.name || "مشاور املاک")}
                     </span>
                   )}
@@ -246,37 +248,6 @@ export default function AgentPageClient({ agent }: AgentPageClientProps) {
             </div>
           </div>
 
-          {process.env.NODE_ENV === "development" && (
-            <ClientOnly>
-              <div className="mb-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-200">
-                <h3 className="text-lg font-bold text-blue-900 mb-3">وضعیت سیستم</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                  <div className="bg-white rounded-xl p-4 border border-blue-100">
-                    <p className="font-semibold text-blue-800">شناسه مشاور</p>
-                    <p className="text-blue-600">{agent.id}</p>
-                  </div>
-                  <div className="bg-white rounded-xl p-4 border border-blue-100">
-                    <p className="font-semibold text-blue-800">پست‌های بارگذاری شده</p>
-                    <p className="text-blue-600">{posts.length} املاک</p>
-                  </div>
-                  <div className="bg-white rounded-xl p-4 border border-blue-100">
-                    <p className="font-semibold text-blue-800">وضعیت</p>
-                    <p className={`font-medium ${loading ? "text-amber-600" : error ? "text-red-600" : "text-green-600"}`}>
-                      {loading ? "در حال بارگذاری..." : error ? "خطا" : "آماده"}
-                    </p>
-                  </div>
-                </div>
-                {agent.profileImage && (
-                  <div className="mt-4 p-4 bg-white rounded-xl border border-blue-100">
-                    <p className="text-xs text-blue-600">
-                      <span className="font-semibold">تصویر پروفایل:</span> {agent.profileImage} → {getImagePath(agent.profileImage)}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </ClientOnly>
-          )}
-
           {loading ? (
             <div className="text-center py-16">
               <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl mx-auto mb-6 flex items-center justify-center animate-pulse">
@@ -323,7 +294,7 @@ export default function AgentPageClient({ agent }: AgentPageClientProps) {
                             />
                           ) : (
                             <span className="text-white font-bold text-lg">
-                              {getInitials(agent.name || agent.instagram || "مشاور املاک")}
+                              {getInitials(agent.name || "مشاور املاک")}
                             </span>
                           )}
                         </div>
@@ -495,7 +466,7 @@ export default function AgentPageClient({ agent }: AgentPageClientProps) {
             </div>
           </div>
           <div className="border-t border-gray-700 mt-12 pt-8 text-center">
-            <p className="text-gray-400 text-lg">&copy; ۲۰۲۴ بازار املاک دبی الیت. تمامی حقوق محفوظ است.</p>
+            <p className="text-gray-400 text-lg">&copy; ۲۰۲ بازار املاک دبی الیت. تمامی حقوق محفوظ است.</p>
           </div>
         </div>
       </footer>
