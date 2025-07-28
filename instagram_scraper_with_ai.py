@@ -271,19 +271,21 @@ def count_persian_characters(text):
     return sum(1 for char in text if char in persian_chars)
 
 def get_or_create_agent(connection, username, profile_data):
-    """Get existing agent or create new one - OPTIMIZED"""
+    """Get existing agent or create new one using only username as agent_id - OPTIMIZED"""
     try:
         cursor = connection.cursor()
 
+        # Use cleaned username as agent_id
+        agent_id = username.replace('.', '-').replace('_', '-')
+
+        # Check if agent already exists
         cursor.execute("SELECT id FROM agents WHERE instagram = %s", (username,))
         existing_agent = cursor.fetchone()
 
         if existing_agent:
             return existing_agent[0]
 
-        timestamp = int(time.time())
-        agent_id = f"{username.replace('.', '-').replace('_', '-')}-{timestamp}"
-
+        # Create new agent with username as agent_id
         full_name = profile_data.get('full_name', '').strip() or username.replace('.', ' ').replace('_', ' ').title()
         biography = profile_data.get('biography', '').strip() or f'مشاور املاک حرفه‌ای در دبی. برای آخرین به‌روزرسانی‌های املاک @{username} را دنبال کنید.'
 
