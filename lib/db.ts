@@ -1,4 +1,6 @@
 import mysql from 'mysql2/promise';
+import fs from 'fs';
+import path from 'path';
 
 export const db = mysql.createPool({
   host: process.env.DB_HOST as string,
@@ -71,6 +73,58 @@ export async function initializeDatabase(): Promise<void> {
     
     const [agents] = await connection.query('SELECT COUNT(*) as count FROM agents');
     const agentCount = (agents as any[])[0].count;
+    
+    if (agentCount === 0) {
+      // Seed a sample agent
+      const sampleAgentId = 'mojtaba-dubai-amlak';
+      await connection.query(
+        `INSERT INTO agents (id, name, profile_image, address, bio, phone, email, instagram, twitter, linkedin) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)` ,
+        [
+          sampleAgentId,
+          'Mojtaba Dubai Amlak',
+          '/agents/mojtaba-dubai-amlak/profile/profile_picture.jpg',
+          'Dubai, UAE',
+          'Specialist in luxury Dubai real estate.',
+          null,
+          null,
+          'mojtaba_dubai_amlak',
+          null,
+          null,
+        ]
+      );
+      
+      // Seed posts from public assets if available
+      const postsDir = path.join(process.cwd(), 'public', 'agents', 'mojtaba-dubai-amlak', 'posts');
+      if (fs.existsSync(postsDir)) {
+        const files = fs.readdirSync(postsDir);
+        const thumbnails = files.filter(f => f.endsWith('_thumbnail.jpg'));
+        for (const thumb of thumbnails) {
+          const base = thumb.replace('_thumbnail.jpg', '');
+          const id = base; // e.g., post_1
+          const captionPath = path.join(postsDir, `${base}_caption.txt`);
+          const transcriptionPath = path.join(postsDir, `${base}_transcription.txt`);
+          const caption = fs.existsSync(captionPath) ? fs.readFileSync(captionPath, 'utf8').trim() : null;
+          const transcription = fs.existsSync(transcriptionPath) ? fs.readFileSync(transcriptionPath, 'utf8').trim() : null;
+          const thumbnail = `/agents/mojtaba-dubai-amlak/posts/${thumb}`;
+
+          await connection.query(
+            `INSERT INTO posts (id, agent_id, title, content, transcription, date, caption, original_url, thumbnail, enhanced_content)
+             VALUES (?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?)` ,
+            [
+              id,
+              sampleAgentId,
+              null,
+              null,
+              transcription,
+              caption,
+              null,
+              thumbnail,
+              null,
+            ]
+          );
+        }
+      }
+    }
     
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
