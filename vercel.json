@@ -7,7 +7,7 @@
       "DB_PORT": "42664",
       "DB_USER": "root",
       "DB_NAME": "railway",
-      "NEXT_PUBLIC_API_KEY": "your-actual-api-key-here"
+      "NEXT_PUBLIC_API_KEY": "your_secret_api_key_123"
     },
     "build": {
       "env": {
