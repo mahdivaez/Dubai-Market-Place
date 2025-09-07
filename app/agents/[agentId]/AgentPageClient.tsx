@@ -56,12 +56,12 @@ export default function AgentPageClient({ agent }: AgentPageClientProps) {
       setLoading(true);
       setError(null);
       console.log("AgentPageClient: Fetching posts for agent:", agent.id);
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "https://dubai-market-place.vercel.app";
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || (typeof window !== 'undefined' && window.location.hostname === 'localhost' ? "http://localhost:3000" : "https://dubai-market-place.vercel.app");
       const response = await fetch(`${apiBaseUrl}/api/agents/${agent.id}/posts`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": process.env.NEXT_PUBLIC_API_KEY || "",
+          "x-api-key": process.env.NEXT_PUBLIC_API_KEY || "your_secret_api_key_123",
         },
         cache: "no-store",
       });

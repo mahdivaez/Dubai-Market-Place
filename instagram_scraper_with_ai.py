@@ -20,22 +20,18 @@ from groq import Groq
 load_dotenv()
 
 # ElevenLabs API key
-api_key = os.getenv("MY_API_KEY")
+api_key = os.getenv("ELEVEN_API_KEY")
 
 # Groq API key
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 # Database configuration
 DB_CONFIG = {
-    'host': os.getenv('DB_HOST', 'turntable.proxy.rlwy.net'),
-    'port': int(os.getenv('DB_PORT', '42664')),
-    'user': os.getenv('DB_USER', 'root'),
-    'password': os.getenv('DB_PASSWORD', 'OlWIFZHFiPpWIXCfaWdBLhILYxoqgecm'),
-    'database': os.getenv('DB_NAME', 'railway'),
-    'charset': 'utf8mb4',
-    'collation': 'utf8mb4_unicode_ci',
-    'ssl_disabled': False,
-    'autocommit': True
+    'host': os.getenv('DB_HOST'),
+    'port': int(os.getenv('DB_PORT', '3306')),
+    'user': os.getenv('DB_USER'),
+    'password': os.getenv('DB_PASSWORD'),
+    'database': os.getenv('DB_NAME'),
 }
 
 # Global variables for thread safety
@@ -48,6 +44,23 @@ try:
 except Exception as e:
     print(f"❌ Error initializing ElevenLabs client: {str(e)}")
     elevenlabs = None
+
+def test_elevenlabs_connection():
+    """Test ElevenLabs API connection"""
+    if not elevenlabs:
+        print("❌ ElevenLabs client not available")
+        return False
+    
+    try:
+        print("🔍 Testing ElevenLabs API connection...")
+        # Use the correct method to get models
+        response = elevenlabs.models.get_all()
+        models = list(response)
+        print(f"✅ ElevenLabs API connection successful. Available models: {len(models)}")
+        return True
+    except Exception as e:
+        print(f"❌ ElevenLabs API connection failed: {e}")
+        return False
 
 try:
     groq_client = Groq(api_key=GROQ_API_KEY)
@@ -152,30 +165,49 @@ def generate_persian_title_with_ai(content, caption="", agent_name=""):
         print(f"⚠️ AI title generation failed: {e}")
         print(f"🔍 Error details: {str(e)}")
         return None
-
 def clean_transcription_with_ai(original_transcription):
-    """Clean transcription using Groq AI"""
+    """Clean transcription using Groq AI - UPDATED to preserve English words"""
     if not groq_client or not original_transcription:
         return original_transcription
     
     try:
-        print("🤖 Cleaning transcription with AI...")
+        print("🤖 Cleaning transcription with AI (preserving English words)...")
         
-        # Enhanced prompt for better transcription cleaning
-        prompt = f"""تو یک ویراستار حرفه‌ای و باتجربه محتوا برای وبسایت و وبلاگ هستی. متن زیر ترنسکریپشن یک ویدیو از اینستاگرام است.
-وظیفه تو:
-1. متن را برای انتشار در وبسایت و وبلاگ به‌صورت حرفه‌ای، روان و خوانا ویرایش کن.
-2. محتوای اصلی و پیام کلیدی متن را کاملاً حفظ کن، چه مربوط به املاک باشد و چه موضوع دیگری.
-3. کلمات نامناسب، تکرارهای غیرضروری، عبارات غیرحرفه‌ای یا محاوره‌ای را حذف یا اصلاح کن.
-4. جملات ناتمام یا مبهم را واضح و کامل کن، بدون تغییر در معنای اصلی.
-5. تمام اطلاعات کلیدی مانند جزئیات تماس، قیمت‌ها (در صورت وجود) و سایر اطلاعات مهم را دقیقاً حفظ کن.
-6. سبک نوشتار را به‌گونه‌ای تنظیم کن که برای مخاطبان وبسایت حرفه‌ای و جذاب باشد.
-7. فقط متن ویرایش‌شده را ارائه کن، بدون هیچ توضیح اضافی.
+        # Enhanced prompt for structured real estate content creation
+        prompt = f"""تو یک متخصص تولید محتوای املاک و ویراستار حرفه‌ای هستی. متن زیر ترنسکریپشن یک ویدیو املاک از اینستاگرام است که باید آن را به محتوای ساختارمند و حرفه‌ای برای وبسایت تبدیل کنی.
 
-متن اصلی:
+**وظایف اصلی:**
+
+1. **حفظ محتوای اصلی**: تمام اطلاعات کلیدی، قیمت‌ها، مشخصات، و جزئیات مهم را دقیقاً حفظ کن.
+
+2. **ساختار مناسب وبسایت**: متن را به‌صورت پاراگراف‌های منطقی و خوانا تنظیم کن (نه لیست، نه نقطه‌چین).
+
+3. **حفظ کلمات انگلیسی**: 
+   - نام مکان‌ها (Dubai Hills, Rose Hill، Golf Course)
+   - واژه‌های تخصصی (Premium, Single Building, L-Shape)  
+   - برندها و نام‌های خاص را دقیقاً به انگلیسی نگه دار
+
+4. **پاک‌سازی هوشمند**:
+   - کلمات اضافی ("در نظر بگیرید"، "خب"، "این قسمت") را حذف کن
+   - جملات تکراری را ادغام کن
+   - عبارات محاوره‌ای را به زبان رسمی تبدیل کن
+   - صداهای اضافی مثل "(صدای ریکاوریدگی)" را حذف کن
+
+5. **زبان حرفه‌ای املاک**: 
+   - از واژگان استاندارد املاک استفاده کن
+   - جملات روان و قابل فهم بنویس
+   - برای مخاطبان وبسایت مناسب باشد
+
+6. **فرمت نهایی**: فقط متن تمیز و ساختارمند ارائه کن، بدون هیچ توضیح، عنوان یا نشان اضافی.
+
+**مثال تبدیل:**
+اصلی: "خب، بریم یک معرفی داشته باشیم از پروژه جدید. این قسمت رو در نظر بگیرید که یک location عالیه."
+تبدیل شده: "پروژه جدید املاک در location مطلوبی قرار گرفته است."
+
+**متن اصلی برای تبدیل:**
 {original_transcription}
 
-متن تمیز شده:"""
+**متن ساختارمند برای وبسایت:**"""
 
         response = groq_client.chat.completions.create(
             messages=[
@@ -184,7 +216,7 @@ def clean_transcription_with_ai(original_transcription):
                     "content": prompt
                 }
             ],
-            model="gemma2-9b-it",  # Using a good model for Persian text
+            model="gemma2-9b-it",  # Using a good model for Persian text with English preservation
             temperature=0.3,  # Lower temperature for more consistent cleaning
             max_tokens=2000,
             top_p=0.9
@@ -193,11 +225,11 @@ def clean_transcription_with_ai(original_transcription):
         cleaned_text = response.choices[0].message.content.strip()
         
         # Basic validation - ensure we got meaningful content back
-        if len(cleaned_text) < 20 or len(cleaned_text) > len(original_transcription) * 2:
+        if len(cleaned_text) < 10 or len(cleaned_text) > len(original_transcription) * 3:
             print("⚠️ AI cleaning result seems invalid, using original")
             return original_transcription
         
-        print("✅ Transcription cleaned successfully with AI")
+        print("✅ Transcription cleaned successfully with AI (English words preserved)")
         return cleaned_text
         
     except Exception as e:
@@ -331,7 +363,12 @@ def get_existing_and_filtered_shortcodes(connection, agent_id):
 
 def add_to_filtered_posts(connection, agent_id, shortcode, reason):
     """Add a post to the filtered posts table - OPTIMIZED"""
+    cursor = None
     try:
+        if not connection or not connection.is_connected():
+            print("❌ Error adding to filtered posts: MySQL Connection not available.")
+            return
+            
         cursor = connection.cursor()
         cursor.execute("""
             INSERT IGNORE INTO filtered_posts (agent_id, instagram_shortcode, filter_reason)
@@ -358,7 +395,12 @@ def get_next_post_number(connection, agent_id):
 
 def save_post_to_database(connection, agent_id, post_data, post_number):
     """Save a post to the database with AI-generated title - OPTIMIZED"""
+    cursor = None
     try:
+        if not connection or not connection.is_connected():
+            print("❌ Error saving post: MySQL Connection not available.")
+            return None
+            
         with db_lock:
             cursor = connection.cursor()
 
@@ -447,29 +489,73 @@ def download_and_process_media(post, post_folder, post_number, download_folder):
         return False, None
 
 def transcribe_video_optimized(video_path):
-    """Transcribe video with optimized settings"""
+    """Transcribe video with robust error handling and correct ElevenLabs Speech-to-Text API"""
     if not elevenlabs:
+        print("⚠️ ElevenLabs client not available")
         return None
 
-    try:
-        with open(video_path, 'rb') as f:
-            audio_data = BytesIO(f.read())
-
-        transcription = elevenlabs.speech_to_text.convert(
-            file=audio_data,
-            model_id="scribe_v1",
-            language_code="fas"
-        )
-
-        return transcription.text.strip()
-
-    except Exception as e:
-        print(f"⚠️ Transcription failed: {e}")
+    # Check if video file exists and is readable
+    if not os.path.exists(video_path):
+        print(f"⚠️ Video file not found: {video_path}")
         return None
+    
+    file_size = os.path.getsize(video_path)
+    if file_size == 0:
+        print(f"⚠️ Video file is empty: {video_path}")
+        return None
+    
+    print(f"📹 Processing video file: {file_size} bytes")
+
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            print(f"🔄 Attempting transcription (attempt {attempt + 1}/{max_retries})...")
+            
+            # Use the correct ElevenLabs Speech-to-Text API with the correct model
+            with open(video_path, 'rb') as audio_file:
+                transcription = elevenlabs.speech_to_text.convert(
+                    file=audio_file,
+                    model_id="scribe_v1"  # Correct Speech-to-Text model name
+                )
+
+            if transcription and transcription.text and len(transcription.text.strip()) > 0:
+                result = transcription.text.strip()
+                print(f"✅ Transcription successful: {len(result)} characters")
+                return result
+            else:
+                print(f"⚠️ Empty transcription result (attempt {attempt + 1})")
+                if attempt < max_retries - 1:
+                    time.sleep(2)
+                    continue
+
+        except Exception as e:
+            error_msg = str(e)
+            print(f"⚠️ Transcription failed (attempt {attempt + 1}): {error_msg}")
+            
+            # Check for specific error types
+            if "Server disconnected" in error_msg or "Connection" in error_msg:
+                print("🔌 Server connection issue detected")
+                if attempt < max_retries - 1:
+                    wait_time = (attempt + 1) * 3  # Progressive backoff
+                    print(f"🔄 Retrying in {wait_time} seconds...")
+                    time.sleep(wait_time)
+                    continue
+            elif "rate limit" in error_msg.lower() or "quota" in error_msg.lower():
+                print("⏰ Rate limit detected, waiting longer...")
+                if attempt < max_retries - 1:
+                    time.sleep(10)
+                    continue
+            else:
+                if attempt < max_retries - 1:
+                    time.sleep(3)
+                    continue
+
+    print(f"❌ All transcription attempts failed for {video_path}")
+    return None
 
 def process_single_post(post, agent_id, connection, download_folder, current_post_number, existing_shortcodes, filtered_shortcodes, profile_data, username):
     """Process a single post - WITH AI TRANSCRIPTION CLEANING AND TITLE GENERATION"""
-    post_shortcode = post.shortcode
+    post_shortcode = post.shortcode if post else "unknown"
 
     if post_shortcode in existing_shortcodes or post_shortcode in filtered_shortcodes:
         return None, "skipped"
@@ -503,17 +589,20 @@ def process_single_post(post, agent_id, connection, download_folder, current_pos
             add_to_filtered_posts(connection, agent_id, post_shortcode, "image_only_no_video")
             return None, "filtered"
 
-        # Step 1: Get original transcription from ElevenLabs
+        # Step 1: Try to get transcription from ElevenLabs (optional)
         original_transcription = transcribe_video_optimized(video_path)
-
+        
+        # Handle transcription results
         if not original_transcription:
+            print("⚠️ Transcription failed completely")
+            # Option 1: Filter the post (current behavior)
             add_to_filtered_posts(connection, agent_id, post_shortcode, "transcription_failed")
             return None, "filtered"
-
-        persian_char_count = count_persian_characters(original_transcription)
-
-        if persian_char_count < 0:
-            add_to_filtered_posts(connection, agent_id, post_shortcode, f"insufficient_persian_chars_{persian_char_count}")
+        
+        if len(original_transcription) < 50:
+            print(f"⚠️ Transcription too short ({len(original_transcription)} chars)")
+            # Option 1: Filter the post (current behavior)
+            add_to_filtered_posts(connection, agent_id, post_shortcode, "short_transcription")
             return None, "filtered"
 
         # Step 2: Clean transcription with AI
@@ -539,10 +628,12 @@ def process_single_post(post, agent_id, connection, download_folder, current_pos
         with open(os.path.join(post_folder, "caption.txt"), 'w', encoding='utf-8') as f:
             f.write(caption)
 
-        # Step 3: Generate AI title based on cleaned content
+        # Step 3: Generate AI title based on available content
         print(f"🤖 Generating unique AI title for post {current_post_number}...")
+        # Use caption if transcription is empty
+        content_for_title = cleaned_transcription if cleaned_transcription else caption
         ai_title = generate_persian_title_with_ai(
-            cleaned_transcription,
+            content_for_title,
             caption,
             profile_data['full_name'] or username
         )
@@ -551,12 +642,13 @@ def process_single_post(post, agent_id, connection, download_folder, current_pos
             print(f"✅ Generated unique title: {ai_title}")
         else:
             print(f"⚠️ AI title generation failed, will use enhanced fallback")
-        # Use cleaned transcription for database content
+        # Use cleaned transcription for database content, fallback to caption if empty
+        content_for_db = cleaned_transcription if cleaned_transcription else caption
         post_data = {
             'title': ai_title,  # Pass the AI-generated title
-            'content': cleaned_transcription,  # Using cleaned version
+            'content': content_for_db,  # Use transcription or caption
             'caption': caption,
-            'transcription': cleaned_transcription,  # Using cleaned version
+            'transcription': cleaned_transcription,  # Keep transcription separate (can be empty)
             'date': post.date_utc,
             'original_url': f"https://instagram.com/p/{post_shortcode}",
             'instagram_shortcode': post_shortcode,
@@ -644,9 +736,11 @@ def download_instagram_profile(username, browser="chrome", max_posts=5):
 
     connection = create_database_connection()
     if not connection:
+        print("❌ Failed to connect to database. Please check your database configuration.")
         return
 
     if not ensure_database_structure(connection):
+        print("❌ Failed to ensure database structure. Please check your database permissions.")
         return
 
     try:
@@ -732,6 +826,14 @@ def download_instagram_profile(username, browser="chrome", max_posts=5):
                 continue
 
             print(f"🆕 NEW POST #{total_checked} ({successful_posts + 1}/{max_posts}): {post_date}")
+
+            # Check connection before processing each post
+            if not connection or not connection.is_connected():
+                print("❌ Database connection lost. Attempting to reconnect...")
+                connection = create_database_connection()
+                if not connection:
+                    print("❌ Failed to reconnect to database. Stopping.")
+                    break
 
             result, status = process_single_post(
                 post, agent_id, connection, download_folder, current_post_number,
@@ -832,7 +934,7 @@ if __name__ == "__main__":
     print("• AI Persian title generation (unique, content-based)")
     print("• Saves both original and cleaned transcriptions")
     print("📅 POST ORDERING: Newest to Oldest")
-    print("🔍 FILTER: 50+ Persian characters only")
+    print("🔍 FILTER: Transcription >= 50 characters only")
     print("🏷️ TITLE GENERATION: AI creates unique titles based on actual content")
     print("=" * 60)
 
@@ -863,6 +965,12 @@ if __name__ == "__main__":
     print(f"🤖 AI Cleaning: ENABLED")
     print(f"🏷️ Unique Persian Title Generation: ENABLED")
     print(f"🔑 Groq API: {'✅ ENABLED' if groq_client else '❌ DISABLED (check GROQ_API_KEY)'}")
+    print(f"🎤 ElevenLabs API: {'✅ ENABLED' if elevenlabs else '❌ DISABLED (check ELEVEN_API_KEY)'}")
+    
+    # Test ElevenLabs connection
+    if elevenlabs:
+        test_elevenlabs_connection()
+    
     print("=" * 60)
 
     download_instagram_profile(username, browser, max_posts)
