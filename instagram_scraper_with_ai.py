@@ -165,6 +165,7 @@ def generate_persian_title_with_ai(content, caption="", agent_name=""):
         print(f"⚠️ AI title generation failed: {e}")
         print(f"🔍 Error details: {str(e)}")
         return None
+
 def clean_transcription_with_ai(original_transcription):
     """Clean transcription using Groq AI - UPDATED to preserve English words"""
     if not groq_client or not original_transcription:
@@ -592,6 +593,14 @@ def process_single_post(post, agent_id, connection, download_folder, current_pos
         # Step 1: Try to get transcription from ElevenLabs (optional)
         original_transcription = transcribe_video_optimized(video_path)
         
+        # Remove video after transcription (regardless of success)
+        if video_path and os.path.exists(video_path):
+            try:
+                os.remove(video_path)
+                print(f"🗑️ Video removed after transcription: {video_path}")
+            except Exception as e:
+                print(f"⚠️ Could not remove video: {e}")
+        
         # Handle transcription results
         if not original_transcription:
             print("⚠️ Transcription failed completely")
@@ -608,14 +617,7 @@ def process_single_post(post, agent_id, connection, download_folder, current_pos
         # Step 2: Clean transcription with AI
         cleaned_transcription = clean_transcription_with_ai(original_transcription)
 
-        # Save both original and cleaned transcriptions
-        with open(os.path.join(post_folder, "transcription_original.txt"), 'w', encoding='utf-8') as f:
-            f.write(original_transcription)
-
-        with open(os.path.join(post_folder, "transcription_cleaned.txt"), 'w', encoding='utf-8') as f:
-            f.write(cleaned_transcription)
-
-        # For backward compatibility, also save as transcription.txt (cleaned version)
+        # Save only cleaned transcription (no original)
         with open(os.path.join(post_folder, "transcription.txt"), 'w', encoding='utf-8') as f:
             f.write(cleaned_transcription)
 
@@ -700,15 +702,10 @@ def organize_files_optimized(username, agent_id, downloaded_folder, saved_posts_
                     os.path.join(posts_dir, f"post_{post_number}_thumbnail.jpg")
                 )
 
-            video_files = [f for f in os.listdir(post_folder_path) if f.endswith('_video.mp4')]
-            if video_files:
-                shutil.copy2(
-                    os.path.join(post_folder_path, video_files[0]),
-                    os.path.join(posts_dir, f"post_{post_number}_video.mp4")
-                )
+            # Do not copy video files
 
             for file in os.listdir(post_folder_path):
-                if file.endswith('.txt'):
+                if file in ['caption.txt', 'transcription.txt']:  # Only copy caption and cleaned transcription
                     shutil.copy2(
                         os.path.join(post_folder_path, file),
                         os.path.join(posts_dir, f"post_{post_number}_{file}")
@@ -932,7 +929,7 @@ if __name__ == "__main__":
     print("• Random delays (avoids rate limits)")
     print("• AI transcription cleaning for website/blog")
     print("• AI Persian title generation (unique, content-based)")
-    print("• Saves both original and cleaned transcriptions")
+    print("• Saves only cleaned transcription")
     print("📅 POST ORDERING: Newest to Oldest")
     print("🔍 FILTER: Transcription >= 50 characters only")
     print("🏷️ TITLE GENERATION: AI creates unique titles based on actual content")
