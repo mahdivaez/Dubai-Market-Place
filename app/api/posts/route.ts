@@ -2,16 +2,7 @@ import { db, testConnection, initializeDatabase } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
-  const apiKey = request.headers.get("x-api-key");
   console.log("API/posts: Fetching all posts...");
-
-  if (!apiKey || apiKey !== process.env.MY_API_KEY) {
-    console.log("API/posts: Unauthorized access attempt");
-    return NextResponse.json(
-      { error: "Unauthorized", details: "Invalid API key", posts: [], count: 0 },
-      { status: 401 }
-    );
-  }
 
   try {
     console.log("API/posts: Testing database connection...");

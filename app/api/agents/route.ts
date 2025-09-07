@@ -2,16 +2,7 @@ import { db, testConnection, initializeDatabase } from "@/lib/db";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
-  const apiKey = request.headers.get("x-api-key");
   console.log("API/agents: Starting to fetch agents...");
-
-  if (!apiKey || apiKey !== process.env.MY_API_KEY) {
-    console.log("API/agents: Unauthorized access attempt");
-    return NextResponse.json(
-      { error: "Unauthorized", details: "Invalid API key", agents: [], count: 0 },
-      { status: 401 }
-    );
-  }
 
   try {
     console.log("API/agents: Testing database connection...");
