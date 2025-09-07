@@ -115,6 +115,19 @@ The platform includes 6 sample agents with realistic Dubai addresses and contact
 2. Connect repository to Vercel
 3. Deploy automatically
 
+#### Environment Variables
+Set these in Vercel Project Settings → Environment Variables (and locally in a `.env` file):
+
+```
+DB_HOST=
+DB_PORT=3306
+DB_USER=
+DB_PASSWORD=
+DB_NAME=
+
+NEXT_PUBLIC_API_BASE_URL=https://dubai-market-place.vercel.app
+```
+
 ### Manual Deployment
 1. Build the project: `npm run build`
 2. Start production server: `npm start`

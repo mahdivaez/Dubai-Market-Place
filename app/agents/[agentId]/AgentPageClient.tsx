@@ -61,7 +61,6 @@ export default function AgentPageClient({ agent }: AgentPageClientProps) {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": process.env.NEXT_PUBLIC_API_KEY || "your_secret_api_key_123",
         },
         cache: "no-store",
       });

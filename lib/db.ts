@@ -1,11 +1,11 @@
 import mysql from 'mysql2/promise';
 
 export const db = mysql.createPool({
-  host: process.env.DB_HOST || 'turntable.proxy.rlwy.net',
-  port: parseInt(process.env.DB_PORT || '42664'),
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || 'OlWIFZHFiPpWIXCfaWdBLhILYxoqgecm',
-  database: process.env.DB_NAME || 'railway',
+  host: process.env.DB_HOST as string,
+  port: parseInt(process.env.DB_PORT || '3306'),
+  user: process.env.DB_USER as string,
+  password: process.env.DB_PASSWORD as string,
+  database: process.env.DB_NAME as string,
   connectTimeout: 30000,
   ssl: {
     rejectUnauthorized: false
