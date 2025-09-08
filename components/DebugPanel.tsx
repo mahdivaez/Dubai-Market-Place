@@ -11,7 +11,7 @@ interface DebugPanelProps {
 
 export default function DebugPanel({ error, agents, showInProduction = false }: DebugPanelProps) {
   // Only show in development or when there are issues or explicitly requested
-  const shouldShow = process.env.NODE_ENV === 'development' || error || agents.length === 0 || showInProduction
+  const shouldShow = process.env.NODE_ENV === 'production' || error || agents.length === 0 || showInProduction
 
   if (!shouldShow) return null
 
@@ -35,7 +35,7 @@ export default function DebugPanel({ error, agents, showInProduction = false }: 
         </div>
         <div className="bg-white rounded-xl p-4 border border-blue-100">
           <p className="font-semibold text-blue-800">محیط</p>
-          <p className="text-blue-600">{process.env.NODE_ENV === 'development' ? 'توسعه' : 'تولید'}</p>
+          <p className="text-blue-600">{process.env.NODE_ENV === 'production' ? 'توسعه' : 'تولید'}</p>
         </div>
       </div>
       
