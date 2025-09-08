@@ -1,20 +1,7 @@
 {
   "version": 2,
-  "env": {
-    "API_BASE_URL": "https://dubai-market-place.vercel.app",
-    "NEXT_PUBLIC_API_BASE_URL": "https://dubai-market-place.vercel.app",
-    "DB_HOST": "switchyard.proxy.rlwy.net",
-    "DB_PORT": "19909",
-    "DB_USER": "root",
-    "DB_NAME": "railway",
-    "NEXT_PUBLIC_API_KEY": "your_secret_api_key_123"
-  },
-  "build": {
-    "env": {
-      "NODE_ENV": "development",
-      "ENABLE_EXPERIMENTAL_PPR": "true"
-    }
-  },
+  "buildCommand": "pnpm run build",
+  "outputDirectory": ".next",
   "functions": {
     "pages/api/**/*": {
       "memory": 512,
@@ -34,7 +21,5 @@
       "src": "/(.*)",
       "dest": "/$1"
     }
-  ],
-  "buildCommand": "pnpm run build",
-  "outputDirectory": ".next"
+  ]
 }
